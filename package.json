@@ -1,7 +1,9 @@
 {
   "name": "mangaone",
   "private": true,
-  "version": "0.0.2",
+  "version": "0.0.3",
+  "description": "Batch Image Resizer for Manga/Comic Archives",
+  "author": "GennosukeSatsuki",
   "main": "dist-electron/main.js",
   "type": "module",
   "scripts": {
@@ -39,7 +41,7 @@
       "icon": "public/icon.png"
     },
     "linux": {
-      "target": ["AppImage", "deb"],
+      "target": ["AppImage"],
       "category": "Utility",
       "icon": "public/icon.png"
     }
