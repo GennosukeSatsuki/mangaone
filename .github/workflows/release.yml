@@ -1,0 +1,130 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'  # v1.0.0 のような形式のタグでトリガー
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    outputs:
+      upload_url: ${{ steps.create_release.outputs.upload_url }}
+      version: ${{ steps.get_version.outputs.version }}
+    steps:
+      - name: Get version from tag
+        id: get_version
+        run: echo "version=${GITHUB_REF#refs/tags/v}" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: MangaOne v${{ steps.get_version.outputs.version }}
+          body: |
+            ## 🎉 MangaOne v${{ steps.get_version.outputs.version }}
+            
+            ### 📦 Downloads
+            
+            Download the appropriate package for your platform below:
+            
+            - **Windows**: `MangaOne-Setup-${{ steps.get_version.outputs.version }}.exe`
+            - **macOS (Intel)**: `MangaOne-${{ steps.get_version.outputs.version }}.dmg`
+            - **macOS (Apple Silicon)**: `MangaOne-${{ steps.get_version.outputs.version }}-arm64.dmg`
+            - **Linux**: `MangaOne-${{ steps.get_version.outputs.version }}.AppImage`
+            
+            ### ✨ What's New
+            
+            See the full changelog below.
+            
+            ### 📝 Installation
+            
+            - **Windows**: Run the `.exe` installer
+            - **macOS**: Open the `.dmg` file and drag MangaOne to Applications
+            - **Linux**: Make the `.AppImage` executable and run it
+            
+            ---
+            
+            **Full Changelog**: https://github.com/${{ github.repository }}/compare/v${{ steps.get_version.outputs.version }}...HEAD
+          draft: false
+          prerelease: false
+
+  build:
+    needs: create-release
+    strategy:
+      matrix:
+        include:
+          - os: windows-latest
+            platform: win
+          - os: ubuntu-latest
+            platform: linux
+          - os: macos-latest
+            platform: mac
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build application
+        run: npm run build:${{ matrix.platform }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Windows artifacts
+        if: matrix.platform == 'win'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release/MangaOne Setup ${{ needs.create-release.outputs.version }}.exe
+          asset_name: MangaOne-Setup-${{ needs.create-release.outputs.version }}.exe
+          asset_content_type: application/octet-stream
+
+      - name: Upload macOS DMG
+        if: matrix.platform == 'mac'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release/MangaOne-${{ needs.create-release.outputs.version }}.dmg
+          asset_name: MangaOne-${{ needs.create-release.outputs.version }}.dmg
+          asset_content_type: application/octet-stream
+
+      - name: Upload macOS ARM64 DMG
+        if: matrix.platform == 'mac'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release/MangaOne-${{ needs.create-release.outputs.version }}-arm64.dmg
+          asset_name: MangaOne-${{ needs.create-release.outputs.version }}-arm64.dmg
+          asset_content_type: application/octet-stream
+        continue-on-error: true
+
+      - name: Upload Linux AppImage
+        if: matrix.platform == 'linux'
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ needs.create-release.outputs.upload_url }}
+          asset_path: ./release/MangaOne-${{ needs.create-release.outputs.version }}.AppImage
+          asset_name: MangaOne-${{ needs.create-release.outputs.version }}.AppImage
+          asset_content_type: application/octet-stream

@@ -103,6 +103,7 @@ npm install
 npm run dev
 ```
 
+
 ### Build
 
 ```bash
@@ -116,6 +117,23 @@ npm run build:linux  # Linux
 ```
 
 Built packages will be in the `release/` directory.
+
+### Release
+
+This project uses GitHub Actions for automated releases. To create a new release:
+
+```bash
+# Update version in package.json
+npm version patch  # or minor, or major
+
+# Push the tag
+git push origin main --tags
+```
+
+GitHub Actions will automatically:
+- Build for Windows, macOS (Intel + Apple Silicon), and Linux
+- Generate release notes
+- Upload all binaries to GitHub Releases
 
 ## 📝 Supported Formats
 

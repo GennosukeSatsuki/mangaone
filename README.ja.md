@@ -118,7 +118,25 @@ npm run build:mac    # macOS
 npm run build:linux  # Linux
 ```
 
+
 ビルドされたパッケージは`release/`ディレクトリに出力されます。
+
+### リリース
+
+このプロジェクトはGitHub Actionsで自動リリースを行います。新しいリリースを作成するには：
+
+```bash
+# package.jsonのバージョンを更新
+npm version patch  # または minor、major
+
+# タグをプッシュ
+git push origin main --tags
+```
+
+GitHub Actionsが自動的に：
+- Windows、macOS（Intel + Apple Silicon）、Linux向けにビルド
+- リリースノートを生成
+- すべてのバイナリをGitHub Releasesにアップロード
 
 ## 📝 対応フォーマット
 
